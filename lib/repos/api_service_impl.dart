@@ -16,6 +16,7 @@ class ApiServiceImpl implements ApiServices {
   Future<Either<String, GetTaskModel>> getAllTasks() async {
     try {
       final response = await DioService.dio.get(AppUrls.tasks);
+      print("RESPONSE $response");
       if (response.statusCode == 200) {
         final getTaskModel = GetTaskModel.fromJson(response.data);
         return Right(getTaskModel);
