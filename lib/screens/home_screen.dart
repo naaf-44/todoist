@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
               tabs: [
                 Tab(icon: Icon(Icons.start), text: 'To Do'),
                 Tab(icon: Icon(Icons.refresh), text: 'In Progress'),
-                Tab(icon: Icon(Icons.close), text: 'Done'),
+                Tab(icon: Icon(Icons.check), text: 'Done'),
               ],
             ),
           ),

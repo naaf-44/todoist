@@ -23,7 +23,6 @@ class TodosBloc extends Bloc<TodosEvent, TodosState> {
 
       emit(state.copyWith(todoStatus: TodoStatus.loading));
       try {
-        print("CONTENT: ${event.content}");
         if (event.content.isNotEmpty) {
           Either<String, CreateTaskModel> result =
               await apiServices.createTask(event.content);
@@ -47,6 +46,10 @@ class TodosBloc extends Bloc<TodosEvent, TodosState> {
         print("ERROR: $e}");
         emit(state.copyWith(todoStatus: TodoStatus.error, error: e.toString()));
       }
+    });
+
+    on<UpdateTaskEvent>((emit, event) async {
+
     });
   }
 }

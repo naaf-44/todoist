@@ -14,3 +14,12 @@ class GetAllTaskEvent extends TodosEvent {
   List<Object?> get props => [content];
 }
 
+class UpdateTaskEvent extends TodosEvent{
+  final String content;
+  final String taskId;
+
+  const UpdateTaskEvent({this.content = "", this.taskId = ""});
+
+  @override
+  List<Object?> get props => [content, taskId];
+}

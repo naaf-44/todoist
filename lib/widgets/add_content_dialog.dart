@@ -5,6 +5,7 @@ import 'package:todoist/widgets/text_widget.dart';
 class AddContentDialog {
   Future<void> showAlert(
       String title,
+      String primaryButtonText,
       BuildContext context,
       TextEditingController textFieldController,
       GlobalKey<FormState> formKey,
@@ -33,7 +34,7 @@ class AddContentDialog {
                 onPressed: () {
                   Navigator.of(context).pop();
                 }),
-            PrimaryButton(text: "Add", onPressed: onPressed),
+            PrimaryButton(text: primaryButtonText, onPressed: onPressed),
           ],
         );
       },

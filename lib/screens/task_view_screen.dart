@@ -7,8 +7,10 @@ import 'package:todoist/blocs/comments_bloc/comments_bloc.dart';
 import 'package:todoist/models/get_task_model.dart';
 import 'package:todoist/models/hive_model.dart';
 import 'package:todoist/repos/api_service.dart';
+import 'package:todoist/repos/api_service_impl.dart';
 import 'package:todoist/utils/app_colors.dart';
 import 'package:todoist/utils/date_time_extension.dart';
+import 'package:todoist/utils/dio_service.dart';
 import 'package:todoist/utils/get_it_setup.dart';
 import 'package:todoist/widgets/add_content_dialog.dart';
 import 'package:todoist/widgets/button_widget.dart';
@@ -26,12 +28,29 @@ class TaskViewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     BuildContext? blocContext;
     String selectedValue = "Select Status";
+    bool isEdit = false;
+    ValueNotifier valueNotifier = ValueNotifier<bool>(false);
 
     return Scaffold(
       appBar: AppBar(
         title: const PrimaryButtonText(text: "Task Details"),
         backgroundColor: AppColors.primaryColor,
         iconTheme: const IconThemeData(color: AppColors.whiteColor),
+        actions: [
+          ValueListenableBuilder(
+              valueListenable: valueNotifier,
+              builder: (context, value, _) {
+                if(value){
+                  return const CircularProgressIndicator(color: AppColors.whiteColor);
+                } else {
+                  return SecondaryIconButton(
+                      onPressed: () {
+                        updateTask(context, valueNotifier);
+                      },
+                      iconData: Icons.edit);
+                }
+              }),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -49,8 +68,8 @@ class TaskViewScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const TitleText(text: "Content: "),
-                            LabelText(
+                            const TitleText(text: "Content:"),
+                            BodyText(
                               text: getTaskModel!.content!,
                             ),
                           ],
@@ -67,15 +86,16 @@ class TaskViewScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const TitleText(text: "Started On"),
-                            LabelText(text: getStartDate(getTaskModel!.id!)),
-
+                            BodyText(text: getStartDate(getTaskModel!.id!)),
                             const Gap(10),
                             const TitleText(text: "Completed On"),
-                            LabelText(text: getCompletedDate(getTaskModel!.id!)),
-
+                            BodyText(
+                                text: getCompletedDate(getTaskModel!.id!)),
                             const Gap(10),
                             const TitleText(text: "Total Time Spent"),
-                            LabelText(text: DateTimeExtension.getTotalTime(getTaskModel!.id!, hiveModelBox)),
+                            BodyText(
+                                text: DateTimeExtension.getTotalTime(
+                                    getTaskModel!.id!, hiveModelBox)),
                           ],
                         ),
                       ],
@@ -84,7 +104,8 @@ class TaskViewScreen extends StatelessWidget {
                   if (getStatusByById(getTaskModel!.id!) != "done")
                     Row(
                       children: [
-                        Expanded(child: CardWidget(
+                        Expanded(
+                            child: CardWidget(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -110,7 +131,8 @@ class TaskViewScreen extends StatelessWidget {
                                       selectedValue = newValue!;
                                     });
                                     if (newValue != "Select Status") {
-                                      String val = newValue!.replaceAll(" ", "_");
+                                      String val =
+                                          newValue!.replaceAll(" ", "_");
                                       changeStatus(getTaskModel!.id!,
                                           val.toLowerCase(), context);
                                     }
@@ -187,11 +209,32 @@ class TaskViewScreen extends StatelessWidget {
     final TextEditingController textFieldController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-    AddContentDialog().showAlert("Add Comment", context, textFieldController, formKey, () {
+    AddContentDialog()
+        .showAlert("Add Comment", "Add", context, textFieldController, formKey, () {
       if (formKey.currentState!.validate()) {
         Navigator.of(context).pop();
         blocContext.read<CommentsBloc>().add(GetAllCommentsEvent(
             content: textFieldController.text, taskId: getTaskModel!.id!));
+      }
+    });
+  }
+
+  updateTask(BuildContext context, ValueNotifier valueNotifier) {
+    final TextEditingController textFieldController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+    textFieldController.text = getTaskModel!.content!;
+    AddContentDialog().showAlert(
+        "Update Task",
+        "Update",
+        context, textFieldController, formKey, () async {
+      if (formKey.currentState!.validate()) {
+        Navigator.of(context).pop();
+        valueNotifier.value = true;
+        await ApiServiceImpl(getIt<DioService>())
+            .updateTask(getTaskModel!.id!, textFieldController.text);
+        valueNotifier.value = false;
+        Navigator.of(context).pop(true);
       }
     });
   }
@@ -218,7 +261,7 @@ class TaskViewScreen extends StatelessWidget {
     return "";
   }
 
-  String getCompletedDate(String id){
+  String getCompletedDate(String id) {
     for (var val in hiveModelBox.values) {
       if (val.id == id) {
         return DateTimeExtension.listTileDateFormat(val.endDate!);
@@ -227,7 +270,7 @@ class TaskViewScreen extends StatelessWidget {
     return "";
   }
 
-  String getStartDate(String id){
+  String getStartDate(String id) {
     for (var val in hiveModelBox.values) {
       if (val.id == id) {
         return DateTimeExtension.listTileDateFormat(val.startDate!);

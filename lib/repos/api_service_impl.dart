@@ -19,14 +19,16 @@ class ApiServiceImpl implements ApiServices {
       final response = await DioService.dio.get(AppUrls.tasks);
       if (response.statusCode == 200) {
         Iterable getAllTaskIterable = response.data;
-        List<GetTaskModel> getTaskModelList = List<GetTaskModel>.from(getAllTaskIterable.map((model)=> GetTaskModel.fromJson(model)));
+        List<GetTaskModel> getTaskModelList = List<GetTaskModel>.from(
+            getAllTaskIterable.map((model) => GetTaskModel.fromJson(model)));
         return Right(getTaskModelList);
       } else {
         return const Left("No Data Found");
       }
     } catch (e) {
       print("ERROR: $e");
-      return const Left("No data found. Please click on Add button to add new task.");
+      return const Left(
+          "No data found. Please click on Add button to add new task.");
     }
   }
 
@@ -35,9 +37,11 @@ class ApiServiceImpl implements ApiServices {
     try {
       var params = {"content": content};
 
-      final response = await DioService.dio.post(AppUrls.tasks, data: jsonEncode(params));
+      final response =
+          await DioService.dio.post(AppUrls.tasks, data: jsonEncode(params));
       if (response.statusCode == 200) {
-        CreateTaskModel createTaskModel = CreateTaskModel.fromJson(response.data);
+        CreateTaskModel createTaskModel =
+            CreateTaskModel.fromJson(response.data);
         return Right(createTaskModel);
       } else {
         return const Left("Not able to create the task.");
@@ -48,27 +52,51 @@ class ApiServiceImpl implements ApiServices {
   }
 
   @override
-  Future<Either<String, List<AllCommentsModel>>> getAllComments(String taskId) async{
+  Future<Either<String, bool>> updateTask(String taskId, String content) async {
     try {
-      final response = await DioService.dio.get("${AppUrls.comment}?task_id=$taskId");
+      var params = {"content": content};
+
+      final response = await DioService.dio
+          .post("${AppUrls.tasks}/$taskId", data: jsonEncode(params));
+      if (response.statusCode == 200) {
+        return const Right(true);
+      } else {
+        return const Left("Couldn't update the task.");
+      }
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  @override
+  Future<Either<String, List<AllCommentsModel>>> getAllComments(
+      String taskId) async {
+    try {
+      final response =
+          await DioService.dio.get("${AppUrls.comment}?task_id=$taskId");
       if (response.statusCode == 200) {
         Iterable getAllCommentsIterable = response.data;
-        List<AllCommentsModel> getAllCommentsModelList = List<AllCommentsModel>.from(getAllCommentsIterable.map((model)=> AllCommentsModel.fromJson(model)));
+        List<AllCommentsModel> getAllCommentsModelList =
+            List<AllCommentsModel>.from(getAllCommentsIterable
+                .map((model) => AllCommentsModel.fromJson(model)));
         return Right(getAllCommentsModelList);
       } else {
         return const Left("No Data Found");
       }
     } catch (e) {
-      return const Left("No data found. Please click on Add button to add new comment.");
+      return const Left(
+          "No data found. Please click on Add button to add new comment.");
     }
   }
 
   @override
-  Future<Either<String, bool>> createComment(String taskId, String content) async {
+  Future<Either<String, bool>> createComment(
+      String taskId, String content) async {
     try {
-      var params = {"content": content, "task_id" : taskId};
+      var params = {"content": content, "task_id": taskId};
 
-      final response = await DioService.dio.post(AppUrls.comment, data: jsonEncode(params));
+      final response =
+          await DioService.dio.post(AppUrls.comment, data: jsonEncode(params));
       if (response.statusCode == 200) {
         return const Right(true);
       } else {

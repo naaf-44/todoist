@@ -98,7 +98,7 @@ class TodoScreen extends StatelessWidget {
     final TextEditingController textFieldController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-    AddContentDialog().showAlert("Add Task", context, textFieldController, formKey, () {
+    AddContentDialog().showAlert("Add Task", "Add", context, textFieldController, formKey, () {
       if (formKey.currentState!.validate()) {
         Navigator.of(context).pop();
         blocContext
