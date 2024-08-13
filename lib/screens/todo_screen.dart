@@ -75,8 +75,7 @@ class TodoScreen extends StatelessWidget {
               text: "Add Task",
               onPressed: () {
                 addTask(blocContext!, context);
-              }),
-        const Gap(5),
+              })
       ],
     );
   }
