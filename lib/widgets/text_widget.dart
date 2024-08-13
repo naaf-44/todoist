@@ -7,7 +7,7 @@ class TitleText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: Theme.of(context).textTheme.titleMedium);
+    return Text(text, style: Theme.of(context).textTheme.titleLarge);
   }
 }
 
@@ -17,7 +17,7 @@ class BodyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: Theme.of(context).textTheme.bodyMedium);
+    return Text(text, style: Theme.of(context).textTheme.bodyLarge);
   }
 }
 
@@ -37,7 +37,7 @@ class PrimaryButtonText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: Theme.of(context).textTheme.labelLarge!.copyWith(color: AppColors.whiteColor));
+    return Text(text, style: Theme.of(context).textTheme.titleLarge!.copyWith(color: AppColors.whiteColor));
   }
 }
 

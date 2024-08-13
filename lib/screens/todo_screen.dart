@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
 import 'package:hive/hive.dart';
 import 'package:todoist/blocs/todos_bloc/todos_bloc.dart';
 import 'package:todoist/models/get_task_model.dart';
@@ -11,6 +12,7 @@ import 'package:todoist/utils/date_time_extension.dart';
 import 'package:todoist/utils/get_it_setup.dart';
 import 'package:todoist/widgets/add_content_dialog.dart';
 import 'package:todoist/widgets/button_widget.dart';
+import 'package:todoist/widgets/card_widget.dart';
 import 'package:todoist/widgets/text_widget.dart';
 
 class TodoScreen extends StatelessWidget {
@@ -42,25 +44,17 @@ class TodoScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       if (getStatusByById(state.getTaskModelList[index].id!) ==
                           status) {
-                        return Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: const BorderSide(
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                          elevation: 2,
-                          shadowColor: AppColors.primaryColor,
+                        return CardWidget(
                           child: ListTile(
                             title: TitleText(
                                 text: state.getTaskModelList[index].content!),
-                            leading: const Icon(Icons.task),
+                            leading: const Icon(Icons.task, size: 40, color: AppColors.primaryColor),
                             subtitle: BodyText(
                                 text: DateTimeExtension.listTileDateFormat(
                                     state.getTaskModelList[index].createdAt!)),
                             onTap: () {
-                              navigateToDetailsScreen(
-                                  context, state.getTaskModelList[index], blocContext!);
+                              navigateToDetailsScreen(context,
+                                  state.getTaskModelList[index], blocContext!);
                             },
                           ),
                         );
@@ -81,29 +75,31 @@ class TodoScreen extends StatelessWidget {
               text: "Add Task",
               onPressed: () {
                 addTask(blocContext!, context);
-              })
+              }),
+        const Gap(5),
       ],
     );
   }
 
-  navigateToDetailsScreen(BuildContext context, GetTaskModel taskModelList, BuildContext blocContext) async {
-    await Navigator.push(
+  navigateToDetailsScreen(BuildContext context, GetTaskModel taskModelList,
+      BuildContext blocContext) async {
+    var res = await Navigator.push(
         context,
         MaterialPageRoute(
             builder: (context) => TaskViewScreen(
                   getTaskModel: taskModelList,
                   hiveModelBox: hiveModelBox,
-                )));
-    blocContext
-        .read<TodosBloc>()
-        .add(const GetAllTaskEvent(content: ""));
+                ))) ?? false;
+    if (res) {
+      blocContext.read<TodosBloc>().add(const GetAllTaskEvent(content: ""));
+    }
   }
 
   addTask(BuildContext blocContext, BuildContext context) {
     final TextEditingController textFieldController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-    AddContentDialog().showAlert(context, textFieldController, formKey, () {
+    AddContentDialog().showAlert("Add Task", context, textFieldController, formKey, () {
       if (formKey.currentState!.validate()) {
         Navigator.of(context).pop();
         blocContext

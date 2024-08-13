@@ -4,6 +4,7 @@ import 'package:todoist/widgets/text_widget.dart';
 
 class AddContentDialog {
   Future<void> showAlert(
+      String title,
       BuildContext context,
       TextEditingController textFieldController,
       GlobalKey<FormState> formKey,
@@ -12,7 +13,7 @@ class AddContentDialog {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const TitleText(text: 'Add task'),
+          title: TitleText(text: title),
           content: Form(
             key: formKey,
             child: TextFormField(

@@ -35,7 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
           appBar: AppBar(
             title: const PrimaryButtonText(text: "Tasks"),
             backgroundColor: AppColors.primaryColor,
-            bottom: const TabBar(
+            bottom:  const TabBar(
+              labelColor: AppColors.whiteColor,
               tabs: [
                 Tab(icon: Icon(Icons.start), text: 'To Do'),
                 Tab(icon: Icon(Icons.refresh), text: 'In Progress'),
