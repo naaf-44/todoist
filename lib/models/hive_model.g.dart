@@ -17,10 +17,10 @@ class HiveModelAdapter extends TypeAdapter<HiveModel> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return HiveModel(
-      id: fields[0] as int?,
+      id: fields[0] as String?,
       status: fields[1] as String?,
-      startDate: fields[2] as DateTime?,
-      endDate: fields[3] as DateTime?,
+      startDate: fields[2] as String?,
+      endDate: fields[3] as String?,
     );
   }
 

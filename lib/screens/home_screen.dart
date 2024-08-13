@@ -1,11 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:todoist/models/hive_model.dart';
 import 'package:todoist/screens/todo_screen.dart';
 import 'package:todoist/utils/app_colors.dart';
 import 'package:todoist/widgets/button_widget.dart';
 import 'package:todoist/widgets/text_widget.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Box<HiveModel>? hiveModelBox;
+
+  @override
+  void initState() {
+    super.initState();
+    openHiveBox();
+  }
+
+  void openHiveBox() async {
+    hiveModelBox = await Hive.openBox("hive_model");
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +43,14 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          body: TabBarView(children: [
-            const TodoScreen(),
-            Container(color: Colors.white),
-            Container(color: Colors.white),
-          ])),
+          body: hiveModelBox == null
+              ? const Center(child: CircularProgressIndicator())
+              : TabBarView(children: [
+                  TodoScreen(hiveModelBox: hiveModelBox!, status: "todo"),
+                  TodoScreen(
+                      hiveModelBox: hiveModelBox!, status: "in_progress"),
+                  TodoScreen(hiveModelBox: hiveModelBox!, status: "done"),
+                ])),
     );
   }
 }

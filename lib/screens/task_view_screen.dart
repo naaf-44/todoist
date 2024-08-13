@@ -2,8 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import 'package:todoist/blocs/comments_bloc/comments_bloc.dart';
 import 'package:todoist/models/get_task_model.dart';
+import 'package:todoist/models/hive_model.dart';
 import 'package:todoist/repos/api_service.dart';
 import 'package:todoist/utils/app_colors.dart';
 import 'package:todoist/utils/date_time_extension.dart';
@@ -14,19 +17,21 @@ import 'package:todoist/widgets/text_widget.dart';
 
 class TaskViewScreen extends StatelessWidget {
   final GetTaskModel? getTaskModel;
+  final Box<HiveModel> hiveModelBox;
 
-  const TaskViewScreen({super.key, this.getTaskModel});
+  const TaskViewScreen(
+      {super.key, this.getTaskModel, required this.hiveModelBox});
 
   @override
   Widget build(BuildContext context) {
     BuildContext? blocContext;
+    String selectedValue = "Select Status";
+
     return Scaffold(
       appBar: AppBar(
         title: const PrimaryButtonText(text: "Task Details"),
         backgroundColor: AppColors.primaryColor,
-        iconTheme: const IconThemeData(
-            color: AppColors.whiteColor
-        ),
+        iconTheme: const IconThemeData(color: AppColors.whiteColor),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -39,19 +44,76 @@ class TaskViewScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const TitleText(text: "Content: "),
-                  LabelText(text: getTaskModel!.content!,),
+                  LabelText(
+                    text: getTaskModel!.content!,
+                  ),
+                  if (getStatusByById(getTaskModel!.id!) == "done")
+                    const Gap(20),
+                  if (getStatusByById(getTaskModel!.id!) == "done")
+                    const TitleText(text: "Total Time Taken"),
+                  if (getStatusByById(getTaskModel!.id!) == "done")
+                    LabelText(text: getTotalTime(getTaskModel!.id!)),
                   const Gap(20),
-                  TitleText(text: "Comments: ${getTaskModel!.commentCount ?? 0}"),
+                  if (getStatusByById(getTaskModel!.id!) != "done") const TitleText(text: "Change Status"),
+                  if (getStatusByById(getTaskModel!.id!) != "done") Row(
+                    children: [
+                      Expanded(
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            side: const BorderSide(
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          elevation: 2,
+                          shadowColor: AppColors.primaryColor,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child:
+                                StatefulBuilder(builder: (context, setState) {
+                              return DropdownButton<String>(
+                                value: selectedValue,
+                                isExpanded: true,
+                                hint: const TitleText(text: 'Change Status'),
+                                items: <String>[
+                                  'Select Status',
+                                  'Todo',
+                                  'In Progress',
+                                  'Done'
+                                ].map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: LabelText(text: value),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    selectedValue = newValue!;
+                                  });
+                                  if (newValue != "Select Status") {
+                                    String val = newValue!.replaceAll(" ", "_");
+                                    changeStatus(
+                                        getTaskModel!.id!, val.toLowerCase(), context);
+                                  }
+                                },
+                              );
+                            }),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(20),
+                  TitleText(
+                      text: "Comments: ${getTaskModel!.commentCount ?? 0}"),
                 ],
               ),
             ),
             BlocProvider(
-              create: (context) =>
-              CommentsBloc(getIt<ApiServices>())
+              create: (context) => CommentsBloc(getIt<ApiServices>())
                 ..add(GetAllCommentsEvent(taskId: getTaskModel!.id!)),
               child: BlocConsumer<CommentsBloc, CommentsState>(
-                listener: (context, state) {
-                },
+                listener: (context, state) {},
                 builder: (context, state) {
                   blocContext = context;
                   if (state.commentsStatus == CommentsStatus.initial ||
@@ -73,11 +135,13 @@ class TaskViewScreen extends StatelessWidget {
                             shadowColor: AppColors.primaryColor,
                             child: ListTile(
                               title: TitleText(
-                                  text: state.allCommentsModelList[index].content!),
+                                  text: state
+                                      .allCommentsModelList[index].content!),
                               leading: const Icon(Icons.task),
                               subtitle: BodyText(
                                   text: DateTimeExtension.listTileDateFormat(
-                                      state.allCommentsModelList[index].postedAt!)),
+                                      state.allCommentsModelList[index]
+                                          .postedAt!)),
                             ),
                           );
                         },
@@ -107,10 +171,55 @@ class TaskViewScreen extends StatelessWidget {
     AddContentDialog().showAlert(context, textFieldController, formKey, () {
       if (formKey.currentState!.validate()) {
         Navigator.of(context).pop();
-        blocContext
-            .read<CommentsBloc>()
-            .add(GetAllCommentsEvent(content: textFieldController.text, taskId: getTaskModel!.id!));
+        blocContext.read<CommentsBloc>().add(GetAllCommentsEvent(
+            content: textFieldController.text, taskId: getTaskModel!.id!));
       }
     });
+  }
+
+  changeStatus(String id, String status, BuildContext context) {
+    for (var val in hiveModelBox.values) {
+      if (val.id == id) {
+        val.status = status;
+        if (status == "done") {
+          val.endDate = DateTime.now().toString();
+        }
+        Navigator.of(context).pop();
+        return;
+      }
+    }
+  }
+
+  String getStatusByById(String id) {
+    for (var val in hiveModelBox.values) {
+      if (val.id == id) {
+        return val.status!;
+      }
+    }
+    return "";
+  }
+
+  String getTotalTime(String id) {
+    for (var val in hiveModelBox.values) {
+      if (val.id == id) {
+        DateTime dateTime1 = DateTime.parse(val.startDate!);
+        DateTime dateTime2 = DateTime.parse(val.endDate!);
+
+        Duration difference = dateTime2.difference(dateTime1);
+
+        if (difference.inDays > 1) {
+          return DateFormat('dd MMM yyyy').format(dateTime1);
+        } else if (difference.inDays == 1) {
+          return DateFormat('HH:mm').format(dateTime1);
+        } else if (difference.inHours >= 1) {
+          return '${difference.inHours} hour(s)';
+        } else if (difference.inMinutes >= 1) {
+          return '${difference.inMinutes} minute(s)';
+        } else {
+          return 'Less than a minute';
+        }
+      }
+    }
+    return "";
   }
 }

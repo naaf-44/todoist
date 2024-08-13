@@ -18,8 +18,6 @@ class ApiServiceImpl implements ApiServices {
     try {
       final response = await DioService.dio.get(AppUrls.tasks);
       if (response.statusCode == 200) {
-        print("RESPONSE: ${response.statusCode}");
-        print("RESPONSE: ${response.data}");
         Iterable getAllTaskIterable = response.data;
         List<GetTaskModel> getTaskModelList = List<GetTaskModel>.from(getAllTaskIterable.map((model)=> GetTaskModel.fromJson(model)));
         return Right(getTaskModelList);
@@ -33,15 +31,14 @@ class ApiServiceImpl implements ApiServices {
   }
 
   @override
-  Future<Either<String, bool>> createTask(String content) async {
+  Future<Either<String, CreateTaskModel>> createTask(String content) async {
     try {
       var params = {"content": content};
 
       final response = await DioService.dio.post(AppUrls.tasks, data: jsonEncode(params));
-      print("RESPONSE: ${response.statusCode}");
-      print("RESPONSE: ${response.data}");
       if (response.statusCode == 200) {
-        return const Right(true);
+        CreateTaskModel createTaskModel = CreateTaskModel.fromJson(response.data);
+        return Right(createTaskModel);
       } else {
         return const Left("Not able to create the task.");
       }
@@ -57,8 +54,6 @@ class ApiServiceImpl implements ApiServices {
       if (response.statusCode == 200) {
         Iterable getAllCommentsIterable = response.data;
         List<AllCommentsModel> getAllCommentsModelList = List<AllCommentsModel>.from(getAllCommentsIterable.map((model)=> AllCommentsModel.fromJson(model)));
-        print("RESPONSE CODE: ${response.statusCode}");
-        print("RESPONSE: $response");
         return Right(getAllCommentsModelList);
       } else {
         return const Left("No Data Found");

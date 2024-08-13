@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
 import 'package:todoist/blocs/todos_bloc/todos_bloc.dart';
+import 'package:todoist/models/get_task_model.dart';
+import 'package:todoist/models/hive_model.dart';
 import 'package:todoist/repos/api_service.dart';
 import 'package:todoist/screens/task_view_screen.dart';
 import 'package:todoist/utils/app_colors.dart';
@@ -11,7 +14,10 @@ import 'package:todoist/widgets/button_widget.dart';
 import 'package:todoist/widgets/text_widget.dart';
 
 class TodoScreen extends StatelessWidget {
-  const TodoScreen({super.key});
+  final String status;
+  final Box<HiveModel> hiveModelBox;
+
+  const TodoScreen({super.key, this.status = "", required this.hiveModelBox});
 
   @override
   Widget build(BuildContext context) {
@@ -34,33 +40,33 @@ class TodoScreen extends StatelessWidget {
                   child: ListView.builder(
                     itemCount: state.getTaskModelList.length,
                     itemBuilder: (context, index) {
-                      return Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          side: const BorderSide(
-                            color: AppColors.primaryColor,
+                      if (getStatusByById(state.getTaskModelList[index].id!) ==
+                          status) {
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            side: const BorderSide(
+                              color: AppColors.primaryColor,
+                            ),
                           ),
-                        ),
-                        elevation: 2,
-                        shadowColor: AppColors.primaryColor,
-                        child: ListTile(
-                          title: TitleText(
-                              text: state.getTaskModelList[index].content!),
-                          leading: const Icon(Icons.task),
-                          subtitle: BodyText(
-                              text: DateTimeExtension.listTileDateFormat(
-                                  state.getTaskModelList[index].createdAt!)),
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => TaskViewScreen(
-                                          getTaskModel:
-                                              state.getTaskModelList[index],
-                                        )));
-                          },
-                        ),
-                      );
+                          elevation: 2,
+                          shadowColor: AppColors.primaryColor,
+                          child: ListTile(
+                            title: TitleText(
+                                text: state.getTaskModelList[index].content!),
+                            leading: const Icon(Icons.task),
+                            subtitle: BodyText(
+                                text: DateTimeExtension.listTileDateFormat(
+                                    state.getTaskModelList[index].createdAt!)),
+                            onTap: () {
+                              navigateToDetailsScreen(
+                                  context, state.getTaskModelList[index], blocContext!);
+                            },
+                          ),
+                        );
+                      } else {
+                        return Container();
+                      }
                     },
                   ),
                 );
@@ -70,13 +76,27 @@ class TodoScreen extends StatelessWidget {
             },
           ),
         ),
-        PrimaryButton(
-            text: "Add Task",
-            onPressed: () {
-              addTask(blocContext!, context);
-            })
+        if (status == "todo")
+          PrimaryButton(
+              text: "Add Task",
+              onPressed: () {
+                addTask(blocContext!, context);
+              })
       ],
     );
+  }
+
+  navigateToDetailsScreen(BuildContext context, GetTaskModel taskModelList, BuildContext blocContext) async {
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => TaskViewScreen(
+                  getTaskModel: taskModelList,
+                  hiveModelBox: hiveModelBox,
+                )));
+    blocContext
+        .read<TodosBloc>()
+        .add(const GetAllTaskEvent(content: ""));
   }
 
   addTask(BuildContext blocContext, BuildContext context) {
@@ -91,5 +111,14 @@ class TodoScreen extends StatelessWidget {
             .add(GetAllTaskEvent(content: textFieldController.text));
       }
     });
+  }
+
+  String getStatusByById(String id) {
+    for (var val in hiveModelBox.values) {
+      if (val.id == id) {
+        return val.status!;
+      }
+    }
+    return "";
   }
 }
